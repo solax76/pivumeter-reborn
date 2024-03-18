@@ -44,6 +44,7 @@ from the top of the repository, run the following to generate the MakeFile:
 
 ```
 aclocal && libtoolize
+autoupdate
 autoconf && automake --add-missing
 ```
 
