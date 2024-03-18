@@ -277,6 +277,14 @@ int set_output_device(const char *output_device_name){
         return 0;
     }
 #endif
+
+#ifdef WITH_DEVICE_WS2812_RING
+    if(strcmp(output_device_name, "ws2812-ring") == 0){
+        fprintf(stderr, "Using device: ws2812-ring\n");
+        output_device = ws2812_ring(20); //#TODO numero di led da configurazione
+        return 0;
+    }
+#endif
     return -1;
 }
 
