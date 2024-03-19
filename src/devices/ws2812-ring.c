@@ -121,7 +121,11 @@ static void leds_array_set_pixel(unsigned char index, unsigned char r, unsigned 
     ws2811_data.channel[0].leds[index] = pixelColor;
   }
 }
-
+static void leds_finished(void){
+  leds_array_clear();
+  leds_array_render();
+  ws2811_fini(&ws2811_data);
+}
 static int ws2812_ring_init(void)
 {
   // system("gpio export 23 output");
@@ -143,6 +147,7 @@ static int ws2812_ring_init(void)
   init_colors();
   leds_array_clear();
   leds_array_render();
+  atexit(leds_finished);
   return 0;
 }
 
