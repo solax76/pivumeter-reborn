@@ -94,13 +94,13 @@ static double get_led_level_value(int led, double meter_value)
   {
     // salita
     value = m1 * (meter_value - s + delta_s1);
-    fprintf(stderr, "get_led_level_value salita per led %d, meter_value %f, delta_s1 %f, s %f , m1 %f => value %f\n", led, meter_value, delta_s1, s,m1, value);
+    //fprintf(stderr, "get_led_level_value salita per led %d, meter_value %f, delta_s1 %f, s %f , m1 %f => value %f\n", led, meter_value, delta_s1, s,m1, value);
   }
   else
   {
     // discesa
     value = m2 * (meter_value - s - delta_s2);
-    fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
+    //fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
   }
   if (value > 255.0)
   {
@@ -140,6 +140,7 @@ static int ws2812_ring_init(void)
     fprintf(stderr, "ws2811_init failed: %s\n", ws2811_get_return_t_str(ret));
     return ret;
   }
+  init_colors();
   leds_array_clear();
   leds_array_render();
   return 0;
@@ -204,57 +205,3 @@ device ws2812_ring(int leds)
   _ws2812_ring.update = &ws2812_ring_update;
   return _ws2812_ring;
 }
-/*
-void writeColor(int val, ws2811_t *ledstring)
-{
-  int i;
-  for (i = 0; i < sizeof(digit1); i++)
-  {
-    (*ledstring).channel[0].leds[i] = val;
-  }
-}
-
-void render()
-{
-  if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
-  {
-    fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret));
-    // break;
-  }
-}
-
-int main(int argc, char *argv[])
-{
-    fprintf(stdout, "Version " VERSION_STR);
-    //matrix = malloc(sizeof(ws2811_led_t) * width * height);
-
-    if ((ret = ws2811_init(&ledstring)) != WS2811_SUCCESS)
-    {
-        fprintf(stderr, "ws2811_init failed: %s\n", ws2811_get_return_t_str(ret));
-        return ret;
-    }
-
-    writeled (digit1, &ledstring); render(); sleep(1);
-    writeled (digit2, &ledstring); render(); sleep(1);
-    writeled (digitTest, &ledstring); render();   sleep (1);
-
-    writeColor (0xFF0000, &ledstring); render(); sleep (1);
-
-    writeColor (0x00FF00, &ledstring); render(); sleep (1);
-    writeColor (0x0000FF, &ledstring); render(); sleep (1);
-
-    writeColor (0x00FF00, &ledstring); render(); sleep (1);
-    writeColor (0x0000FF, &ledstring); render(); sleep (1);
-
-    writeColor (0x00FF00, &ledstring); render(); sleep (1);
-    writeColor (0x0000FF, &ledstring); render(); sleep (1);
-
-    writeColor (0x000000, &ledstring); render();
-
-
-    ws2811_fini(&ledstring);
-    printf ("\n");
-
-    return 0;
-}
-*/
