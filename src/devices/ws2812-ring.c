@@ -85,6 +85,24 @@ static void init_colors()
   delta_b = (blue_2 - blue_1) / channelLeds;
 }
 
+static void update_colors()
+{
+  // fprintf(stderr,"Init blinkt vumeter colors\n");
+  red_1 = (red_1+1) % 256;
+  green_1 = (green_1+1) % 256;
+  blue_1 = (blue_1+1) % 256;
+
+  red_2 = (red_2+1) % 256;
+  green_2 = (green_2+1)% 256;
+  blue_2 = (blue_2+1) % 256;
+
+  m1 = 255.0 / delta_s1;
+
+  delta_r = (red_2 - red_1) / channelLeds;
+  delta_g = (green_2 - green_1) / channelLeds;
+  delta_b = (blue_2 - blue_1) / channelLeds;
+}
+
 static double get_led_level_value(int led, double meter_value)
 {
   double s = (MAX_LEVEL * (led + 1)) / channelLeds;
@@ -210,6 +228,8 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
     autoreset_counter = 0;
     max_comp_level = MAX(meter_level_l, meter_level_r);
     init_colors();
+  } else {
+    update_colors();
   }
 }
 
