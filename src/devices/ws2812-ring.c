@@ -35,7 +35,7 @@ static ws2811_t ws2811_data = {
                     .gpionum = GPIO_PIN,
                     .invert = 0,
                     .count = 0, //-> va impostato nell'init
-                    .strip_type = WS2811_STRIP_RGB,
+                    .strip_type = WS2811_STRIP_BGR,
                     .brightness = 255,
                 },
             [1] =
@@ -78,8 +78,6 @@ static void init_colors()
   green_2 = 0;
   blue_2 = rand() % 256;
 
-  delta_s1 = 32767.0f / totalLeds;
-  delta_s2 = 32767.0f / 4.0;
   m1 = 255.0 / delta_s1;
   m2 = -255.0 / delta_s2;
 
@@ -96,11 +94,13 @@ static double get_led_level_value(int led, double meter_value)
   {
     // salita
     value = m1 * (meter_value - s + delta_s1);
+    fprintf(stderr, "get_led_level_value salita per led %d, meter_value %f, delta_s1 %f, s %f , m1 %f => value %f\n", led, meter_value, delta_s1, s,m1, value);
   }
   else
   {
     // discesa
     value = m2 * (meter_value - s - delta_s2);
+    fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
   }
   if (value > 255.0)
   {
@@ -129,6 +129,8 @@ static int ws2812_ring_init(void)
   //  wiringPiSetupSys();
   max_level = 0;
   autoreset_counter = 0;
+  delta_s1 = 32767.0f / totalLeds;
+  delta_s2 = 32767.0f / 4.0;
 
   // la funzione di init crea l'array dei leds
   ws2811_data.channel[0].count = totalLeds;
