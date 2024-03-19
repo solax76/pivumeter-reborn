@@ -4,12 +4,12 @@
 #define GPIO_PIN 12
 #define DMA 10
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MAX_LEVEL 32767.0f
 
-static double max_level;
+static double max_comp_level;
 static int autoreset_counter;
 static int totalLeds;
 static int channelLeds;
-static int maxOnLeds;
 
 static int red_1;
 static int green_1;
@@ -20,9 +20,7 @@ static int green_2;
 static int blue_2;
 
 static double delta_s1;
-static double delta_s2;
 static double m1;
-static double m2;
 static double delta_r;
 static double delta_g;
 static double delta_b;
@@ -81,16 +79,15 @@ static void init_colors()
   blue_2 = rand() % 256;
 
   m1 = 255.0 / delta_s1;
-  m2 = -255.0 / delta_s2;
 
-  delta_r = (red_2 - red_1) / totalLeds;
-  delta_g = (green_2 - green_1) / totalLeds;
-  delta_b = (blue_2 - blue_1) / totalLeds;
+  delta_r = (red_2 - red_1) / channelLeds;
+  delta_g = (green_2 - green_1) / channelLeds;
+  delta_b = (blue_2 - blue_1) / channelLeds;
 }
 
 static double get_led_level_value(int led, double meter_value)
 {
-  double s = (32767.0f * (led + 1)) / channelLeds;
+  double s = (MAX_LEVEL * (led + 1)) / channelLeds;
   double value;
   if (meter_value < s)
   {
@@ -100,8 +97,8 @@ static double get_led_level_value(int led, double meter_value)
   }
   else
   {
-    // discesa
-    value = m2 * (meter_value - s - delta_s2);
+    // superato
+    value = 255.0;
     // fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
   }
   if (value > 255.0)
@@ -136,12 +133,10 @@ static int ws2812_ring_init(void)
   // system("gpio export 23 output");
   // system("gpio export 24 output");
   //  wiringPiSetupSys();
-  max_level = 0;
-  maxOnLeds = 6;
+  max_comp_level = 0;
   channelLeds = totalLeds / 2;
   autoreset_counter = 0;
-  delta_s1 = 32767.0f / totalLeds;
-  delta_s2 = 32767.0f / maxOnLeds;
+  delta_s1 = MAX_LEVEL / channelLeds;
 
   // la funzione di init crea l'array dei leds
   ws2811_data.channel[0].count = totalLeds;
@@ -165,9 +160,9 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
   // scala della luminosità
   double b_scale = level->led_brightness / 255.0;
   // calcolo il max del livello per utilizzare tutta la barra utile anche se il livello è basso
-  max_level = MAX(max_level, meter_level_l);
-  max_level = MAX(max_level, meter_level_r);
-  double level_scale = max_level / 32767.0f;
+  max_comp_level = MAX(max_comp_level, meter_level_l);
+  max_comp_level = MAX(max_comp_level, meter_level_r);
+  double level_scale = max_comp_level / MAX_LEVEL;
   if (level_scale > 0)
   {
     meter_level_l = meter_level_l / level_scale;
@@ -181,6 +176,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
     double value;
     if (led < channelLeds)
     {
+      // Right channel
       int index = led;
       if (level->bar_reverse == 1)
       {
@@ -190,6 +186,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
     }
     else
     {
+      // Left channel
       int index =totalLeds-led;
       if (level->bar_reverse == 1)
       {
@@ -210,7 +207,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
   if (autoreset_counter > 10000)
   {
     autoreset_counter = 0;
-    max_level = 0;
+    max_comp_level = MAX(meter_level_l, meter_level_r);
     init_colors();
   }
 }
