@@ -75,7 +75,7 @@ static void init_colors()
   blue_1 = rand() % 256;
 
   red_2 = rand() % 256;
-  green_2 = 0;
+  green_2 = 255;
   blue_2 = rand() % 256;
 
   m1 = 255.0 / delta_s1;
@@ -194,7 +194,8 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
       }
       value = get_led_level_value(totalLeds-led, meter_level_l);
     }
-    
+    // b_scale [0->1]
+    // value   [0->255]
     int RL = b_scale * value * (delta_r * index + red_1) / 255.0;
     int GL = b_scale * value * (delta_g * index + green_1) / 255.0;
     int BL = b_scale * value * (delta_b * index + blue_1) / 255.0;
