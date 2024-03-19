@@ -172,33 +172,33 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
   int led;
   for (led = 0; led < totalLeds; led++)
   {
-    int index;
+    double index;
     double value;
     if (led < channelLeds)
     {
       // Right channel
-      int index = led;
+      index = led;
       if (level->bar_reverse == 1)
       {
         index = totalLeds - led;
       }
-      value = get_led_level_value(led, meter_level_r);
+      value = get_led_level_value(led, meter_level_r)/ 255.0;
     }
     else
     {
       // Left channel
-      int index =totalLeds-led;
+      index =totalLeds-led;
       if (level->bar_reverse == 1)
       {
         index = led;
       }
-      value = get_led_level_value(totalLeds-led, meter_level_l);
+      value = get_led_level_value(totalLeds-led, meter_level_l)/ 255.0;
     }
     // b_scale [0->1]
-    // value   [0->255]
-    int RL = b_scale * value * (delta_r * index + red_1) / 255.0;
-    int GL = b_scale * value * (delta_g * index + green_1) / 255.0;
-    int BL = b_scale * value * (delta_b * index + blue_1) / 255.0;
+    // value   [0->1]
+    int RL = b_scale * value * (delta_r * index + red_1);
+    int GL = b_scale * value * (delta_g * index + green_1);
+    int BL = b_scale * value * (delta_b * index + blue_1);
 
     leds_array_set_pixel(led, RL, GL, BL);
   }
