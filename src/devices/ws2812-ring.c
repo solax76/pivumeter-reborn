@@ -8,6 +8,8 @@
 static double max_level;
 static int autoreset_counter;
 static int totalLeds;
+static int channelLeds;
+static int maxOnLeds;
 
 static int red_1;
 static int green_1;
@@ -88,19 +90,19 @@ static void init_colors()
 
 static double get_led_level_value(int led, double meter_value)
 {
-  double s = (32767.0f * (led + 1)) / totalLeds;
+  double s = (32767.0f * (led + 1)) / channelLeds;
   double value;
   if (meter_value < s)
   {
     // salita
     value = m1 * (meter_value - s + delta_s1);
-    //fprintf(stderr, "get_led_level_value salita per led %d, meter_value %f, delta_s1 %f, s %f , m1 %f => value %f\n", led, meter_value, delta_s1, s,m1, value);
+    // fprintf(stderr, "get_led_level_value salita per led %d, meter_value %f, delta_s1 %f, s %f , m1 %f => value %f\n", led, meter_value, delta_s1, s,m1, value);
   }
   else
   {
     // discesa
     value = m2 * (meter_value - s - delta_s2);
-    //fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
+    // fprintf(stderr, "get_led_level_value discesa per led %d, meter_value %f, delta_s2 %f, s %f, m2 %f  => value %f\n", led, meter_value, delta_s2, s,m2, value);
   }
   if (value > 255.0)
   {
@@ -113,15 +115,18 @@ static double get_led_level_value(int led, double meter_value)
   return value;
 }
 
-static void leds_array_set_pixel(unsigned char index, unsigned char r, unsigned char g, unsigned char b){
-  if (index<totalLeds){
+static void leds_array_set_pixel(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
+{
+  if (index < totalLeds)
+  {
     int pixelColor = r << 16;
     pixelColor |= g << 8;
     pixelColor |= b;
     ws2811_data.channel[0].leds[index] = pixelColor;
   }
 }
-static void leds_finished(void){
+static void leds_finished(void)
+{
   leds_array_clear();
   leds_array_render();
   ws2811_fini(&ws2811_data);
@@ -132,9 +137,11 @@ static int ws2812_ring_init(void)
   // system("gpio export 24 output");
   //  wiringPiSetupSys();
   max_level = 0;
+  maxOnLeds = 6;
+  channelLeds = totalLeds / 2;
   autoreset_counter = 0;
   delta_s1 = 32767.0f / totalLeds;
-  delta_s2 = 32767.0f / 4.0;
+  delta_s2 = 32767.0f / maxOnLeds;
 
   // la funzione di init crea l'array dei leds
   ws2811_data.channel[0].count = totalLeds;
@@ -170,26 +177,32 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
   int led;
   for (led = 0; led < totalLeds; led++)
   {
-
-    int index_l = totalLeds - led;
-    int index_r = led;
-    if (level->bar_reverse == 1)
+    int index;
+    double value;
+    if (led < channelLeds)
     {
-      index_l = led;
-      index_r = totalLeds - led;
+      int index = led;
+      if (level->bar_reverse == 1)
+      {
+        index = totalLeds - led;
+      }
+      value = get_led_level_value(led, meter_level_r);
     }
-    double value_l = get_led_level_value(index_l, meter_level_l);
-    double value_r = get_led_level_value(index_r, meter_level_r);
+    else
+    {
+      int index =totalLeds-led;
+      if (level->bar_reverse == 1)
+      {
+        index = led;
+      }
+      value = get_led_level_value(totalLeds-led, meter_level_l);
+    }
+    
+    int RL = b_scale * value * (delta_r * index + red_1) / 255.0;
+    int GL = b_scale * value * (delta_g * index + green_1) / 255.0;
+    int BL = b_scale * value * (delta_b * index + blue_1) / 255.0;
 
-    int RL = b_scale * value_l * (delta_r * index_l + red_1) / 255.0;
-    int GL = b_scale * value_l * (delta_g * index_l + green_1) / 255.0;
-    int BL = b_scale * value_l * (delta_b * index_l + blue_1) / 255.0;
-
-    int RR = b_scale * value_r * (delta_r * index_r + red_1) / 255.0;
-    int GR = b_scale * value_r * (delta_g * index_r + green_1) / 255.0;
-    int BR = b_scale * value_r * (delta_b * index_r + blue_1) / 255.0;
-
-    leds_array_set_pixel(index_r, MAX(RL, RR), MAX(GL, GR), MAX(BL, BR));
+    leds_array_set_pixel(led, RL, GL, BL);
   }
 
   leds_array_render();
