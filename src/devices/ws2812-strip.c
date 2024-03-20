@@ -270,7 +270,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
     autoreset_counter = 0;
     maxComputedLevel = MAX(meter_level_l, meter_level_r);
     init_colors();
-  } else {
+  } else if (autoreset_counter%100==0) {
     startH = ((startH+1)%360);
     endH = ((endH+1)%360);
   }
