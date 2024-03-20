@@ -12,6 +12,8 @@ static int autoreset_counter;
 static int totalNumberOfLeds;
 static int channelLeds;
 static double levelEachLed;
+static int startH;
+static int endH;
 
 static ws2811_t ws2811_data = {
     .freq = WS2811_TARGET_FREQ,
@@ -142,7 +144,12 @@ static double computeLedValue(int led, double meter_value)
   }
   return value;
 }
-
+static void init_colors()
+{
+  // fprintf(stderr,"Init blinkt vumeter colors\n");
+  startH = rand() % 360;
+  endH = rand() % 360;
+}
 static void setLedArrayPixelColor(unsigned char index, RGBColor color)
 {
   if (index < totalNumberOfLeds)
@@ -174,6 +181,7 @@ static int ws2812_ring_init(void)
     fprintf(stderr, "ws2811_init failed: %s\n", ws2811_get_return_t_str(ret));
     return ret;
   }
+  init_colors();
   clearLedsArray();
   renderLedsArray();
 
@@ -231,7 +239,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
       led_value = computeLedValue(index, meter_level_r);
       led_V = b_factor * led_value;
       led_S = led_value;
-      led_H = led_H_right;
+      led_H = endH + (startH-endH)*(index+1)/(double)channelLeds;
     }
     else
     {
@@ -240,7 +248,7 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
       led_value = computeLedValue(index, meter_level_l);
       led_V = b_factor * led_value;
       led_S = led_value;
-      led_H = led_H_left;
+      led_H = endH + (startH-endH)*(index+1)/(double)channelLeds;
     }
 
     if (level->bar_reverse == 1)
@@ -261,6 +269,10 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
   {
     autoreset_counter = 0;
     maxComputedLevel = MAX(meter_level_l, meter_level_r);
+    init_colors();
+  } else {
+    startH = ((startH+1)%360);
+    endH = ((endH+1)%360);
   }
 }
 /**
