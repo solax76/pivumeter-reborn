@@ -6,7 +6,7 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MAX_LEVEL 32767.0f
 
-static double max_comp_level;
+static double maxComputedLevel;
 static int autoreset_counter;
 static int totalLeds;
 static int channelLeds;
@@ -49,7 +49,7 @@ static ws2811_t ws2811_data = {
 };
 // static unsigned int pixels[NUM_PIXELS] = {0,0,0,0,0,0,0,0};
 
-static void leds_array_clear(void)
+static void clearLedsArray(void)
 {
   int x;
   for (x = 0; x < totalLeds; x++)
@@ -58,7 +58,7 @@ static void leds_array_clear(void)
   }
 }
 
-static void leds_array_render()
+static void renderLedsArray()
 {
   ws2811_return_t ret;
   if ((ret = ws2811_render(&ws2811_data)) != WS2811_SUCCESS)
@@ -130,7 +130,7 @@ static double get_led_level_value(int led, double meter_value)
   return value;
 }
 
-static void leds_array_set_pixel(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
+static void setLedArrayPixelColor(unsigned char index, unsigned char r, unsigned char g, unsigned char b)
 {
   if (index < totalLeds)
   {
@@ -140,10 +140,10 @@ static void leds_array_set_pixel(unsigned char index, unsigned char r, unsigned 
     ws2811_data.channel[0].leds[index] = pixelColor;
   }
 }
-static void leds_finished(void)
+static void stopRenderingLeds(void)
 {
-  leds_array_clear();
-  leds_array_render();
+  clearLedsArray();
+  renderLedsArray();
   ws2811_fini(&ws2811_data);
 }
 static int ws2812_ring_init(void)
@@ -151,7 +151,7 @@ static int ws2812_ring_init(void)
   // system("gpio export 23 output");
   // system("gpio export 24 output");
   //  wiringPiSetupSys();
-  max_comp_level = 0;
+  maxComputedLevel = 0;
   channelLeds = totalLeds / 2;
   autoreset_counter = 0;
   delta_s1 = MAX_LEVEL / channelLeds;
@@ -165,22 +165,22 @@ static int ws2812_ring_init(void)
     return ret;
   }
   init_colors();
-  leds_array_clear();
-  leds_array_render();
-  atexit(leds_finished);
+  clearLedsArray();
+  renderLedsArray();
+  atexit(stopRenderingLeds);
   return 0;
 }
 
 static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_scope_ameter_t *level)
 {
-  leds_array_clear();
+  clearLedsArray();
 
   // scala della luminosità
   double b_scale = level->led_brightness / 255.0;
   // calcolo il max del livello per utilizzare tutta la barra utile anche se il livello è basso
-  max_comp_level = MAX(max_comp_level, meter_level_l);
-  max_comp_level = MAX(max_comp_level, meter_level_r);
-  double level_scale = max_comp_level / MAX_LEVEL;
+  maxComputedLevel = MAX(maxComputedLevel, meter_level_l);
+  maxComputedLevel = MAX(maxComputedLevel, meter_level_r);
+  double level_scale = maxComputedLevel / MAX_LEVEL;
   if (level_scale > 0)
   {
     meter_level_l = meter_level_l / level_scale;
@@ -218,15 +218,15 @@ static void ws2812_ring_update(int meter_level_l, int meter_level_r, snd_pcm_sco
     int GL = b_scale * value * (delta_g * index + green_1);
     int BL = b_scale * value * (delta_b * index + blue_1);
 
-    leds_array_set_pixel(led, RL, GL, BL);
+    setLedArrayPixelColor(led, RL, GL, BL);
   }
 
-  leds_array_render();
+  renderLedsArray();
   autoreset_counter++;
   if (autoreset_counter > 10000)
   {
     autoreset_counter = 0;
-    max_comp_level = MAX(meter_level_l, meter_level_r);
+    maxComputedLevel = MAX(meter_level_l, meter_level_r);
     init_colors();
   } else if (autoreset_counter % 100 == 0){
     update_colors();

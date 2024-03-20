@@ -3,4 +3,4 @@
 #include "scroll-phat.h"
 #include "phat-beat.h"
 #include "scroll-phat-hd.h"
-#include "ws2812-ring.h"
+#include "ws2812-strip.h"
